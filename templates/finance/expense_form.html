@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Add Expense — HomeHQ{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:2rem auto;">
+  <div class="page-header">
+    <h1 class="page-title">Add Expense</h1>
+    <a href="{% url 'budget_list' %}" class="btn-hq-secondary text-decoration-none">← Back</a>
+  </div>
+  <div class="card-hq">
+    <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Budget: <strong style="color:var(--text-primary);">{{ budget.category }}</strong></p>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group-hq">
+        <label class="form-label-hq">{{ field.label }}</label>
+        <div>{{ field }}</div>
+        {% for error in field.errors %}<div style="color:var(--accent-red);font-size:0.75rem;">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn-hq-primary">Log Expense</button>
+        <a href="{% url 'budget_list' %}" class="btn-hq-secondary text-decoration-none">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Bills — {{ month_name }} — HomeHQ{% endblock %}
+{% block content %}
+
+<div class="page-header mt-2">
+  <div>
+    <h1 class="page-title">Bill Tracker</h1>
+    <p class="page-subtitle">Recurring bill status by month</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'bill_export' %}" class="btn-hq-secondary text-decoration-none">⬇ Export JSON</a>
+    <a href="{% url 'bill_import' %}" class="btn-hq-secondary text-decoration-none">⬆ Import JSON</a>
+    <a href="{% url 'budget_list' %}" class="btn-hq-secondary text-decoration-none">Budgets</a>
+    <a href="{% url 'bill_create' %}" class="btn-hq-primary text-decoration-none">+ Add Bill</a>
+  </div>
+</div>
+
+<!-- Month nav + summary -->
+<div class="card-hq mb-3" style="padding:0.85rem 1.25rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+    <div style="display:flex;align-items:center;gap:0.65rem;">
+      <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn-hq-secondary text-decoration-none" style="padding:0.3rem 0.8rem;font-size:1.1rem;line-height:1;">&#8249;</a>
+      <h2 style="font-size:1.1rem;font-weight:700;margin:0;min-width:155px;text-align:center;">{{ month_name }}</h2>
+      <a href="?month={{ next_month }}&year={{ next_year }}" class="btn-hq-secondary text-decoration-none" style="padding:0.3rem 0.8rem;font-size:1.1rem;line-height:1;">&#8250;</a>
+      {% if not is_current_month %}
+        <a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Today</a>
+      {% endif %}
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
+        <span class="text-muted-hq">Total</span> <strong>${{ total_due|floatformat:2 }}</strong>
+      </div>
+      <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
+        <span style="color:var(--accent-green);">✓ Paid ${{ total_paid|floatformat:2 }}</span>
+      </div>
+      {% if total_unpaid > 0 %}
+      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
+        <span style="color:var(--accent-yellow);">⏳ Unpaid ${{ total_unpaid|floatformat:2 }}</span>
+      </div>
+      {% endif %}
+      {% if overdue_count > 0 %}
+      <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
+        <span style="color:var(--accent-red);">⚠ {{ overdue_count }} overdue</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% if bill_count > 0 %}
+  <div style="margin-top:0.85rem;">
+    <div style="display:flex;justify-content:space-between;font-size:0.73rem;color:var(--text-muted);margin-bottom:0.3rem;">
+      <span>{{ paid_count }} of {{ bill_count }} paid</span>
+      <span>${{ total_paid|floatformat:0 }} / ${{ total_due|floatformat:0 }}</span>
+    </div>
+    <div class="progress-hq" style="height:5px;">
+      {% if total_due > 0 %}{% widthratio total_paid total_due 100 as pv %}<div class="progress-bar-hq" style="width:{{ pv }}%;"></div>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Bill table -->
+<div class="card-hq" style="padding:0;overflow:hidden;">
+  <table class="table-hq">
+    <thead>
+      <tr>
+        <th>Bill</th>
+        <th>Amount</th>
+        <th>Frequency</th>
+        <th>Due Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in bill_rows %}
+      <tr {% if row.is_overdue %}class="overdue-row"{% endif %}>
+        <td>
+          {% if row.bill.url %}
+            <a href="{{ row.bill.url }}" target="_blank" rel="noopener noreferrer"
+               style="font-weight:600;color:var(--accent-blue);text-decoration:none;">
+              {{ row.bill.name }}
+              <span style="font-size:0.7rem;opacity:0.7;margin-left:3px;">↗</span>
+            </a>
+          {% else %}
+            <span style="font-weight:600;">{{ row.bill.name }}</span>
+          {% endif %}
+          {% if row.bill.notes %}
+            <div style="font-size:0.73rem;color:var(--text-muted);margin-top:0.1rem;">{{ row.bill.notes|truncatechars:55 }}</div>
+          {% endif %}
+        </td>
+        <td style="font-weight:700;">${{ row.bill.amount }}</td>
+        <td><span class="badge-hq-gray">{{ row.bill.get_frequency_display }}</span></td>
+        <td style="white-space:nowrap;">
+          {{ row.due|date:"M j, Y" }}
+          {% if row.is_overdue %}<br><span class="badge-hq-red" style="font-size:0.68rem;">Overdue</span>{% endif %}
+          {% if row.is_paid and row.paid_date %}<br><span style="font-size:0.7rem;color:var(--text-muted);">Paid {{ row.paid_date|date:"M j" }}</span>{% endif %}
+        </td>
+        <td>
+          {% if row.is_paid %}<span class="badge-hq-green">✓ Paid</span>
+          {% elif row.is_overdue %}<span class="badge-hq-red">Overdue</span>
+          {% else %}<span class="badge-hq-yellow">Unpaid</span>{% endif %}
+        </td>
+        <td>
+          <div class="d-flex gap-1 flex-wrap">
+            {% if row.is_paid %}
+              <form method="post" action="{% url 'bill_mark_unpaid' row.bill.pk %}" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="month" value="{{ month }}">
+                <input type="hidden" name="year" value="{{ year }}">
+                <button type="submit" class="btn-hq-secondary" style="padding:0.28rem 0.55rem;font-size:0.73rem;">↩ Unpay</button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'bill_mark_paid' row.bill.pk %}" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="month" value="{{ month }}">
+                <input type="hidden" name="year" value="{{ year }}">
+                <button type="submit" class="btn-hq-success" style="padding:0.28rem 0.55rem;font-size:0.73rem;">✓ Pay</button>
+              </form>
+            {% endif %}
+            <a href="{% url 'bill_edit' row.bill.pk %}" class="btn-hq-secondary text-decoration-none" style="padding:0.28rem 0.55rem;font-size:0.73rem;">Edit</a>
+            <a href="{% url 'bill_delete' row.bill.pk %}" class="btn-hq-danger text-decoration-none" style="padding:0.28rem 0.55rem;font-size:0.73rem;">Del</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+        No bills in {{ month_name }}. <a href="{% url 'bill_create' %}" style="color:var(--accent-blue);">Add one</a> or navigate to another month.
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

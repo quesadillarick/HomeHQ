@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Notes — HomeHQ{% endblock %}
+{% block content %}
+<div class="page-header mt-3">
+  <div><h1 class="page-title">Knowledge Base</h1><p class="page-subtitle">Household notes and documentation</p></div>
+  <a href="{% url 'note_create' %}" class="btn-hq-primary text-decoration-none">+ New Note</a>
+</div>
+
+{% if categories %}
+<div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+  <a href="{% url 'note_list' %}" class="badge-hq-{% if not request.GET.category %}blue{% else %}gray{% endif %} text-decoration-none">All</a>
+  {% for cat in categories %}
+  <a href="?category={{ cat.name }}" class="badge-hq-{% if request.GET.category == cat.name %}blue{% else %}gray{% endif %} text-decoration-none">{{ cat.name }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-3">
+  {% for note in notes %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card-hq" style="height:100%;">
+      <div class="card-hq-header">
+        <a href="{% url 'note_detail' note.pk %}" style="color:var(--text-primary);text-decoration:none;font-weight:600;font-size:0.95rem;">{{ note.title }}</a>
+        <div class="d-flex gap-1">
+          <a href="{% url 'note_edit' note.pk %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.75rem;padding:0.25rem 0.6rem;">Edit</a>
+          <a href="{% url 'note_delete' note.pk %}" class="btn-hq-danger text-decoration-none" style="font-size:0.75rem;padding:0.25rem 0.6rem;">Del</a>
+        </div>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{ note.body|truncatechars:150 }}</p>
+      <div style="margin-top:0.75rem;display:flex;justify-content:space-between;align-items:center;">
+        {% if note.category %}<span class="badge-hq-blue">{{ note.category }}</span>{% else %}<span></span>{% endif %}
+        <span style="font-size:0.75rem;color:var(--text-subtle);">{{ note.updated_at|date:"M j, Y" }}</span>
+      </div>
+      {% if note.tags %}
+      <div style="margin-top:0.5rem;font-size:0.75rem;color:var(--accent-blue);">{{ note.tags }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="card-hq" style="text-align:center;padding:2rem;color:var(--text-muted);">No notes yet. <a href="{% url 'note_create' %}" style="color:var(--accent-blue);">Create one.</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

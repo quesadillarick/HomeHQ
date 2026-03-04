@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HomeHQ{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/homehq.css' %}">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── Left Sidebar ───────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- Brand -->
+    <a class="sidebar-brand text-decoration-none" href="{% url 'dashboard' %}">
+      <span class="sidebar-brand-icon">⬡</span>
+      <span class="sidebar-brand-text">HomeHQ</span>
+    </a>
+
+    <!-- Nav -->
+    <nav class="sidebar-nav mt-3">
+
+      <div class="sidebar-section-label">Overview</div>
+      <a class="sidebar-link text-decoration-none {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+         href="{% url 'dashboard' %}">
+        <span class="sidebar-icon">⊞</span> Dashboard
+      </a>
+
+      <div class="sidebar-section-label">Finance</div>
+      <a class="sidebar-link text-decoration-none {% if 'bills' in request.path %}active{% endif %}"
+         href="{% url 'bill_list' %}">
+        <span class="sidebar-icon">💳</span> Bills
+      </a>
+      <a class="sidebar-link text-decoration-none {% if 'budgets' in request.path %}active{% endif %}"
+         href="{% url 'budget_list' %}">
+        <span class="sidebar-icon">📊</span> Budgets
+      </a>
+
+      <div class="sidebar-section-label">Home</div>
+      <a class="sidebar-link text-decoration-none {% if 'assets' in request.path %}active{% endif %}"
+         href="{% url 'asset_list' %}">
+        <span class="sidebar-icon">🏷</span> Assets
+      </a>
+      <a class="sidebar-link text-decoration-none {% if 'vehicles' in request.path %}active{% endif %}"
+         href="{% url 'vehicle_list' %}">
+        <span class="sidebar-icon">🚗</span> Garage
+      </a>
+      <a class="sidebar-link text-decoration-none {% if 'notes' in request.path %}active{% endif %}"
+         href="{% url 'note_list' %}">
+        <span class="sidebar-icon">📝</span> Notes
+      </a>
+
+    </nav>
+
+    <!-- User / logout pinned to bottom -->
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <span class="sidebar-user-icon">👤</span>
+        <span class="sidebar-username">{{ request.user.username }}</span>
+      </div>
+      <form method="post" action="{% url 'logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="sidebar-logout-btn">Logout</button>
+      </form>
+    </div>
+
+  </aside>
+
+  <!-- ── Main content ────────────────────────────────────────────────────── -->
+  <div class="main-area">
+
+    <!-- Flash messages -->
+    {% if messages %}
+    <div class="flash-messages">
+      {% for message in messages %}
+      <div class="alert-hq {% if message.tags == 'success' %}alert-hq-success{% elif message.tags == 'error' %}alert-hq-error{% elif message.tags == 'warning' %}alert-hq-warning{% else %}alert-hq-info{% endif %}">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="page-container">
+      {% block content %}{% endblock %}
+    </div>
+
+  </div><!-- /main-area -->
+
+</div><!-- /shell -->
+
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/chart.umd.min.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Import Bills — HomeHQ{% endblock %}
+{% block content %}
+<div style="max-width:580px;margin:2rem auto;">
+  <div class="page-header">
+    <h1 class="page-title">Import Bills</h1>
+    <a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none">← Back</a>
+  </div>
+
+  <div class="card-hq mb-3">
+    <div class="card-hq-header"><h2 class="card-hq-title">Upload JSON File</h2></div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group-hq">
+        <label class="form-label-hq">Bill Export File (.json)</label>
+        <input type="file" name="import_file" accept=".json,application/json" class="form-control-hq" required>
+        <div style="font-size:0.75rem;color:var(--text-subtle);margin-top:0.25rem;">
+          Only HomeHQ bill export files are accepted.
+        </div>
+      </div>
+      <div class="form-group-hq">
+        <label class="form-label-hq">If a bill already exists (matched by name)</label>
+        <select name="import_mode" class="form-control-hq">
+          <option value="skip">Skip — keep the existing bill unchanged</option>
+          <option value="overwrite">Overwrite — replace with imported values</option>
+          <option value="append">Append — always create a new bill</option>
+        </select>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn-hq-primary">Import Bills</button>
+        <a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-hq" style="border-color:rgba(59,130,246,0.3);">
+    <div class="card-hq-header"><h2 class="card-hq-title">JSON Format</h2></div>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">
+      The expected format matches what the <strong>Export JSON</strong> button produces.
+      You can also create import files manually:
+    </p>
+    <pre style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:0.9rem;font-size:0.78rem;color:#A5F3FC;overflow-x:auto;">{
+  "homehq_export": "bills",
+  "version": 1,
+  "bills": [
+    {
+      "name": "Electric Bill",
+      "amount": "145.00",
+      "frequency": "monthly",
+      "due_date": "2026-03-06",
+      "url": "https://myutility.com/pay",
+      "notes": "Auto-pay enabled",
+      "is_active": true
+    }
+  ]
+}</pre>
+    <p style="font-size:0.78rem;color:var(--text-subtle);margin-top:0.5rem;margin-bottom:0;">
+      Valid frequencies: <code style="font-size:0.75rem;">monthly</code> <code style="font-size:0.75rem;">weekly</code>
+      <code style="font-size:0.75rem;">quarterly</code> <code style="font-size:0.75rem;">annually</code>
+      <code style="font-size:0.75rem;">one_time</code>
+    </p>
+  </div>
+</div>
+{% endblock %}

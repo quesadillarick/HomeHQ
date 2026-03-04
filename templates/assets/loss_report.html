@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Loss Report — HomeHQ{% endblock %}
+{% block content %}
+<div class="page-header mt-3">
+  <div>
+    <h1 class="page-title">Insurance Loss Report</h1>
+    <p class="page-subtitle">Full Asset Summary for Insurance Claims</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'asset_list' %}" class="btn-hq-secondary text-decoration-none">← Assets</a>
+    <button onclick="window.print()" class="btn-hq-primary">🖨 Print Report</button>
+  </div>
+</div>
+
+<div class="card-hq mb-3" style="border-color:rgba(59,130,246,0.4);">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:1rem;font-weight:600;">Total Declared Asset Value</span>
+    <span style="font-size:1.6rem;font-weight:700;color:var(--accent-green);">${{ total|floatformat:2 }}</span>
+  </div>
+</div>
+
+{% for category, data in by_category.items %}
+<div class="card-hq mb-3">
+  <div class="card-hq-header">
+    <h2 class="card-hq-title">{{ category }}</h2>
+    <span style="font-weight:600;color:var(--accent-blue);">${{ data.total|floatformat:2 }}</span>
+  </div>
+  <table class="table-hq w-100">
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Serial #</th>
+        <th>Purchase Date</th>
+        <th>Value</th>
+        <th>Insurance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for asset in data.items %}
+      <tr>
+        <td>{{ asset.name }}</td>
+        <td style="font-family:monospace;font-size:0.82rem;">{{ asset.serial_number|default:"—" }}</td>
+        <td>{{ asset.purchase_date|date:"M j, Y"|default:"—" }}</td>
+        <td style="font-weight:600;">${{ asset.value|floatformat:2 }}</td>
+        <td>{{ asset.insurance_policy.name|default:"None" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% empty %}
+<div class="card-hq" style="text-align:center;padding:2rem;color:var(--text-muted);">No assets recorded.</div>
+{% endfor %}
+{% endblock %}

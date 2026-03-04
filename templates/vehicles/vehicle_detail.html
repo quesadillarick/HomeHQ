@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}{{ vehicle }} — HomeHQ{% endblock %}
+{% block content %}
+<div class="page-header mt-3">
+  <div>
+    <h1 class="page-title">{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}</h1>
+    {% if vehicle.color %}<p class="page-subtitle">{{ vehicle.color }}{% if vehicle.plate %} · {{ vehicle.plate }}{% endif %}</p>{% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'vehicle_list' %}" class="btn-hq-secondary text-decoration-none">← Garage</a>
+    <a href="{% url 'service_add' vehicle.pk %}" class="btn-hq-primary text-decoration-none">+ Log Service</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card-hq">
+      <div class="card-hq-header"><h2 class="card-hq-title">Vehicle Info</h2><a href="{% url 'vehicle_edit' vehicle.pk %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.78rem;padding:0.3rem 0.7rem;">Edit</a></div>
+      <div style="font-size:0.875rem;">
+        {% if vehicle.vin %}<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);"><span class="text-muted-hq">VIN</span><span style="font-family:monospace;font-size:0.8rem;">{{ vehicle.vin }}</span></div>{% endif %}
+        {% if vehicle.plate %}<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);"><span class="text-muted-hq">Plate</span><span>{{ vehicle.plate }}</span></div>{% endif %}
+        {% if vehicle.odometer %}<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);"><span class="text-muted-hq">Odometer</span><span>{{ vehicle.odometer|floatformat:0 }} mi</span></div>{% endif %}
+        {% if vehicle.insurance_policy %}<div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span class="text-muted-hq">Insurance</span><span>{{ vehicle.insurance_policy }}</span></div>{% endif %}
+      </div>
+      {% if vehicle.service_due %}
+      <div class="alert-hq alert-hq-warning mt-3">⚠ Oil service due!</div>
+      {% endif %}
+      <div class="mt-3 d-flex gap-2">
+        {% if vehicle.title_scan %}<a href="{{ vehicle.title_scan.url }}" class="btn-hq-secondary text-decoration-none" style="font-size:0.78rem;" target="_blank">📄 Title</a>{% endif %}
+        {% if vehicle.registration_scan %}<a href="{{ vehicle.registration_scan.url }}" class="btn-hq-secondary text-decoration-none" style="font-size:0.78rem;" target="_blank">📄 Registration</a>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card-hq" style="padding:0;overflow:hidden;">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);"><h2 style="font-size:1rem;font-weight:600;margin:0;">Service History</h2></div>
+      <table class="table-hq w-100">
+        <thead><tr><th>Service</th><th>Date</th><th>Odometer</th><th>Next @ Miles</th><th>Cost</th><th>Shop</th><th></th></tr></thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td><span class="badge-hq-blue">{{ log.get_service_type_display }}</span></td>
+            <td>{{ log.date|date:"M j, Y" }}</td>
+            <td>{{ log.odometer_at_service|floatformat:0|default:"—" }}</td>
+            <td>{{ log.next_service_odometer|floatformat:0|default:"—" }}</td>
+            <td>{% if log.cost %}${{ log.cost|floatformat:2 }}{% else %}—{% endif %}</td>
+            <td style="color:var(--text-muted);">{{ log.shop|default:"—" }}</td>
+            <td>
+              <form method="post" action="{% url 'service_delete' log.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-hq-danger" style="font-size:0.75rem;padding:0.25rem 0.5rem;">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No service records yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

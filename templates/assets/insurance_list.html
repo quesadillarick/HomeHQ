@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Insurance — HomeHQ{% endblock %}
+{% block content %}
+<div class="page-header mt-3">
+  <div><h1 class="page-title">Insurance Policies</h1></div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'asset_list' %}" class="btn-hq-secondary text-decoration-none">← Assets</a>
+    <a href="{% url 'insurance_create' %}" class="btn-hq-primary text-decoration-none">+ Add Policy</a>
+  </div>
+</div>
+<div class="row g-3">
+  {% for policy in policies %}
+  <div class="col-md-6">
+    <div class="card-hq">
+      <div class="card-hq-header">
+        <h2 class="card-hq-title">{{ policy.name }}</h2>
+        <div class="d-flex gap-1">
+          <a href="{% url 'insurance_edit' policy.pk %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.78rem;padding:0.3rem 0.7rem;">Edit</a>
+          <a href="{% url 'insurance_delete' policy.pk %}" class="btn-hq-danger text-decoration-none" style="font-size:0.78rem;padding:0.3rem 0.7rem;">Del</a>
+        </div>
+      </div>
+      <div style="font-size:0.875rem;">
+        <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span class="text-muted-hq">Provider</span><span>{{ policy.provider }}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span class="text-muted-hq">Policy #</span><span style="font-family:monospace;">{{ policy.policy_number }}</span></div>
+        {% if policy.coverage_amount %}<div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span class="text-muted-hq">Coverage</span><span style="color:var(--accent-green);">${{ policy.coverage_amount|floatformat:0 }}</span></div>{% endif %}
+        {% if policy.expiry_date %}<div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span class="text-muted-hq">Expires</span><span>{{ policy.expiry_date|date:"M j, Y" }}</span></div>{% endif %}
+        <div style="padding:0.3rem 0;"><span class="text-muted-hq">Assets Covered: </span><span class="badge-hq-blue">{{ policy.assets.count }}</span></div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="card-hq" style="text-align:center;padding:2rem;color:var(--text-muted);">No insurance policies. <a href="{% url 'insurance_create' %}" style="color:var(--accent-blue);">Add one.</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

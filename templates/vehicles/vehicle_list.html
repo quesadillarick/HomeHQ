@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}The Garage — HomeHQ{% endblock %}
+{% block content %}
+<div class="page-header mt-3">
+  <div><h1 class="page-title">The Garage</h1><p class="page-subtitle">Fleet management and maintenance tracking</p></div>
+  <a href="{% url 'vehicle_create' %}" class="btn-hq-primary text-decoration-none">+ Add Vehicle</a>
+</div>
+<div class="row g-3">
+  {% for vehicle in vehicles %}
+  <div class="col-md-6">
+    <div class="card-hq {% if vehicle.service_due %}border-warning{% endif %}">
+      <div class="card-hq-header">
+        <div>
+          <h2 class="card-hq-title">{{ vehicle.year }} {{ vehicle.make }} {{ vehicle.model }}</h2>
+          {% if vehicle.plate %}<span class="badge-hq-gray mt-1">{{ vehicle.plate }}</span>{% endif %}
+        </div>
+        <div class="d-flex gap-1">
+          <a href="{% url 'vehicle_detail' vehicle.pk %}" class="btn-hq-primary text-decoration-none" style="font-size:0.78rem;padding:0.3rem 0.7rem;">Details</a>
+          <a href="{% url 'vehicle_edit' vehicle.pk %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.78rem;padding:0.3rem 0.7rem;">Edit</a>
+        </div>
+      </div>
+      <div style="font-size:0.875rem;">
+        {% if vehicle.odometer %}<div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span class="text-muted-hq">Odometer</span><span>{{ vehicle.odometer|floatformat:0 }} mi</span></div>{% endif %}
+        {% if vehicle.vin %}<div style="display:flex;justify-content:space-between;padding:0.3rem 0;"><span class="text-muted-hq">VIN</span><span style="font-family:monospace;font-size:0.8rem;">{{ vehicle.vin }}</span></div>{% endif %}
+        {% if vehicle.service_due %}<div class="alert-hq alert-hq-warning mt-2" style="padding:0.4rem 0.75rem;">⚠ Oil service due</div>{% endif %}
+        <div style="padding:0.3rem 0;"><span class="text-muted-hq">Service Records: </span><span class="badge-hq-blue">{{ vehicle.service_logs.count }}</span></div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="card-hq" style="text-align:center;padding:2rem;color:var(--text-muted);">No vehicles yet. <a href="{% url 'vehicle_create' %}" style="color:var(--accent-blue);">Add one.</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} — HomeHQ{% endblock %}
+{% block content %}
+<div style="max-width:560px;margin:2rem auto;">
+  <div class="page-header">
+    <h1 class="page-title">{{ title }}</h1>
+    <a href="{% url 'insurance_list' %}" class="btn-hq-secondary text-decoration-none">← Back</a>
+  </div>
+  <div class="card-hq">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group-hq">
+        <label class="form-label-hq">{{ field.label }}</label>
+        <div>{{ field }}</div>
+        {% for error in field.errors %}<div style="color:var(--accent-red);font-size:0.75rem;">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn-hq-primary">Save Policy</button>
+        <a href="{% url 'insurance_list' %}" class="btn-hq-secondary text-decoration-none">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

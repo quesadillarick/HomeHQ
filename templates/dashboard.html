@@ -1,0 +1,482 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — HomeHQ{% endblock %}
+
+{% block content %}
+<div class="page-header mt-3">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">{{ today|date:"l, F j, Y" }}</p>
+  </div>
+  <a href="{% url 'event_create' %}" class="btn-hq-primary text-decoration-none">+ Add Event</a>
+</div>
+
+<!-- Stat Row -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value text-warning-hq">{{ overdue_count }}</div>
+      <div class="stat-label">Overdue Bills</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value">${{ total_assets|floatformat:0 }}</div>
+      <div class="stat-label">Asset Value</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value">{{ vehicle_count }}</div>
+      <div class="stat-label">Vehicles</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value {% if service_alerts %}text-warning-hq{% else %}text-success-hq{% endif %}">{{ service_alerts|length }}</div>
+      <div class="stat-label">Service Alerts</div>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar (full width) -->
+<div class="card-hq mb-4" id="calendar-card">
+  <div class="card-hq-header">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <button id="cal-prev" class="btn-hq-secondary" style="padding:0.3rem 0.7rem;font-size:1rem;line-height:1;">&#8249;</button>
+      <h2 class="card-hq-title" id="cal-title" style="min-width:180px;text-align:center;margin:0;"></h2>
+      <button id="cal-next" class="btn-hq-secondary" style="padding:0.3rem 0.7rem;font-size:1rem;line-height:1;">&#8250;</button>
+      <button id="cal-today" class="btn-hq-secondary" style="padding:0.3rem 0.75rem;font-size:0.78rem;">Today</button>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center;font-size:0.78rem;color:var(--text-muted);">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent-yellow);margin-right:4px;"></span>Bill Due</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent-red);margin-right:4px;"></span>Overdue</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(16,185,129,0.8);margin-right:4px;"></span>Paid</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent-blue);margin-right:4px;"></span>Event</span>
+    </div>
+  </div>
+
+  <!-- Day-of-week headers -->
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;">
+    {% for d in dow_labels %}
+    <div style="text-align:center;font-size:0.72rem;font-weight:600;color:var(--text-subtle);text-transform:uppercase;letter-spacing:0.05em;padding:0.4rem 0;">{{ d }}</div>
+    {% endfor %}
+  </div>
+
+  <!-- Calendar Grid -->
+  <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
+
+  <!-- Day detail panel -->
+  <div id="cal-detail" style="display:none;margin-top:1rem;padding:1rem;background:var(--bg-elevated);border-radius:8px;border:1px solid var(--border);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+      <h3 id="cal-detail-title" style="font-size:0.95rem;font-weight:600;margin:0;"></h3>
+      <div style="display:flex;gap:0.5rem;">
+        <a id="cal-add-event-link" href="#" class="btn-hq-primary text-decoration-none" style="font-size:0.78rem;padding:0.3rem 0.7rem;">+ Event</a>
+        <button id="cal-detail-close" class="btn-hq-secondary" style="font-size:0.78rem;padding:0.3rem 0.7rem;">✕</button>
+      </div>
+    </div>
+    <div id="cal-detail-items"></div>
+  </div>
+</div>
+
+<!-- Bottom row -->
+<div class="row g-3">
+  <!-- Upcoming Bills -->
+  <div class="col-md-4">
+    <div class="card-hq">
+      <div class="card-hq-header">
+        <h2 class="card-hq-title">📅 Bills Due Soon</h2>
+        <a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.8rem;padding:0.3rem 0.75rem;">All Bills</a>
+      </div>
+      {% if upcoming_bills %}
+        {% for bill in upcoming_bills %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+          <div>
+            <div style="font-weight:500;font-size:0.875rem;">{{ bill.name }}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">{{ bill.due_date|date:"M j" }} · {{ bill.get_frequency_display }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:600;font-size:0.875rem;">${{ bill.amount }}</div>
+            {% if bill.is_overdue %}<span class="badge-hq-red">Overdue</span>{% else %}<span class="badge-hq-yellow">Due Soon</span>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted-hq" style="font-size:0.875rem;text-align:center;padding:1rem 0;margin:0;">No bills due in the next 14 days.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Budget Overview -->
+  <div class="col-md-4">
+    <div class="card-hq">
+      <div class="card-hq-header">
+        <h2 class="card-hq-title">💰 Budget Overview</h2>
+        <a href="{% url 'budget_list' %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.8rem;padding:0.3rem 0.75rem;">All Budgets</a>
+      </div>
+      {% if budget_data %}
+        {% for item in budget_data %}
+        <div style="margin-bottom:1rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+            <span style="font-size:0.875rem;font-weight:500;">{{ item.budget.category }}</span>
+            <span style="font-size:0.8rem;color:var(--text-muted);">${{ item.spent|floatformat:0 }} / ${{ item.budget.limit|floatformat:0 }}</span>
+          </div>
+          <div class="progress-hq">
+            <div class="progress-bar-hq {% if item.pct >= 90 %}danger{% elif item.pct >= 75 %}warning{% endif %}" style="width:{{ item.pct }}%;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted-hq" style="font-size:0.875rem;text-align:center;padding:1rem 0;margin:0;">No budgets for this month.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right column: Events + Notes -->
+  <div class="col-md-4">
+    <!-- Upcoming Events -->
+    <div class="card-hq mb-3">
+      <div class="card-hq-header">
+        <h2 class="card-hq-title">🗓 Upcoming Events</h2>
+        <a href="{% url 'event_create' %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.8rem;padding:0.3rem 0.75rem;">+ Add</a>
+      </div>
+      {% if upcoming_events %}
+        {% for event in upcoming_events %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <div style="width:8px;height:8px;border-radius:2px;flex-shrink:0;
+              {% if event.color == 'blue' %}background:var(--accent-blue);
+              {% elif event.color == 'green' %}background:var(--accent-green);
+              {% elif event.color == 'yellow' %}background:var(--accent-yellow);
+              {% elif event.color == 'red' %}background:var(--accent-red);
+              {% elif event.color == 'purple' %}background:#A855F7;{% endif %}
+            "></div>
+            <div>
+              <div style="font-size:0.875rem;font-weight:500;">{{ event.title }}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">{{ event.date|date:"M j" }}{% if event.end_date %} – {{ event.end_date|date:"M j" }}{% endif %}</div>
+            </div>
+          </div>
+          <a href="{% url 'event_edit' event.pk %}" style="color:var(--text-muted);font-size:0.75rem;text-decoration:none;">Edit</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted-hq" style="font-size:0.875rem;text-align:center;padding:0.75rem 0;margin:0;">No upcoming events.</p>
+      {% endif %}
+    </div>
+
+    <!-- Recent Notes -->
+    <div class="card-hq">
+      <div class="card-hq-header">
+        <h2 class="card-hq-title">📝 Recent Notes</h2>
+        <a href="{% url 'note_list' %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.8rem;padding:0.3rem 0.75rem;">All Notes</a>
+      </div>
+      {% if recent_notes %}
+        {% for note in recent_notes %}
+        <div style="padding:0.4rem 0;border-bottom:1px solid var(--border);">
+          <a href="{% url 'note_detail' note.pk %}" style="color:var(--text-primary);text-decoration:none;font-size:0.875rem;font-weight:500;">{{ note.title }}</a>
+          <div style="font-size:0.75rem;color:var(--text-muted);">{{ note.updated_at|date:"M j, Y" }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted-hq" style="font-size:0.875rem;text-align:center;padding:0.75rem 0;margin:0;">No notes yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Service Alerts (conditional) -->
+{% if service_alerts %}
+<div class="card-hq mt-3" style="border-color:rgba(245,158,11,0.4);">
+  <div class="card-hq-header">
+    <h2 class="card-hq-title">🔧 Vehicle Service Alerts</h2>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+    {% for vehicle in service_alerts %}
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+      <span class="badge-hq-yellow">⚠ Oil service due</span>
+      <a href="{% url 'vehicle_detail' vehicle.pk %}" style="color:var(--text-primary);text-decoration:none;font-size:0.875rem;">{{ vehicle }}</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  const TODAY_ISO = "{{ today_iso }}";
+  const today = new Date(TODAY_ISO + 'T00:00:00');
+
+  let currentYear = today.getFullYear();
+  let currentMonth = today.getMonth() + 1; // 1-indexed
+
+  // Cache fetched data: key = "YYYY-M"
+  const cache = {};
+  let activeDay = null;
+
+  const MONTH_NAMES = ['January','February','March','April','May','June',
+                       'July','August','September','October','November','December'];
+  const COLOR_MAP = {
+    blue:   '#3B82F6',
+    green:  '#10B981',
+    yellow: '#F59E0B',
+    red:    '#EF4444',
+    purple: '#A855F7',
+  };
+
+  function isoToLocal(isoStr) {
+    // Parse date without timezone shift
+    const [y, m, d] = isoStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function formatDateFull(isoStr) {
+    const d = isoToLocal(isoStr);
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  async function fetchData(year, month) {
+    const key = `${year}-${month}`;
+    if (cache[key]) return cache[key];
+    const resp = await fetch(`/finance/calendar/data/?year=${year}&month=${month}`);
+    const data = await resp.json();
+    cache[key] = data.items || [];
+    return cache[key];
+  }
+
+  function buildItemsByDate(items) {
+    const map = {};
+    items.forEach(item => {
+      const startDate = isoToLocal(item.date);
+      const endDate = item.end_date ? isoToLocal(item.end_date) : startDate;
+      let cursor = new Date(startDate);
+      while (cursor <= endDate) {
+        const iso = cursor.toISOString().split('T')[0];
+        if (!map[iso]) map[iso] = [];
+        map[iso].push(item);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    });
+    return map;
+  }
+
+  async function renderCalendar() {
+    const grid = document.getElementById('cal-grid');
+    const title = document.getElementById('cal-title');
+    title.textContent = `${MONTH_NAMES[currentMonth - 1]} ${currentYear}`;
+
+    // Clear grid
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.85rem;">Loading…</div>';
+
+    const items = await fetchData(currentYear, currentMonth);
+    const itemsByDate = buildItemsByDate(items);
+
+    // Figure out grid
+    const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+    grid.innerHTML = '';
+
+    // Leading empty cells
+    for (let i = 0; i < firstDay; i++) {
+      grid.appendChild(Object.assign(document.createElement('div'), {
+        style: 'min-height:90px;background:var(--bg-primary);border-radius:6px;opacity:0.3;'
+      }));
+    }
+
+    // Day cells
+    for (let day = 1; day <= daysInMonth; day++) {
+      const isoDate = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const isToday = isoDate === TODAY_ISO;
+      const dayItems = itemsByDate[isoDate] || [];
+
+      const cell = document.createElement('div');
+      cell.style.cssText = `
+        min-height: 90px;
+        background: ${isToday ? 'rgba(59,130,246,0.08)' : 'var(--bg-elevated)'};
+        border-radius: 6px;
+        padding: 0.4rem;
+        cursor: pointer;
+        border: 1px solid ${isToday ? 'rgba(59,130,246,0.5)' : 'transparent'};
+        transition: border-color 0.15s ease, background 0.15s ease;
+        position: relative;
+      `;
+
+      // Day number
+      const dayNum = document.createElement('div');
+      dayNum.style.cssText = `
+        font-size: 0.8rem;
+        font-weight: ${isToday ? '700' : '500'};
+        color: ${isToday ? 'var(--accent-blue)' : 'var(--text-muted)'};
+        margin-bottom: 0.3rem;
+        line-height: 1;
+      `;
+      dayNum.textContent = day;
+      cell.appendChild(dayNum);
+
+      // Pip dots for items (max shown inline: 3)
+      const MAX_SHOW = 3;
+      dayItems.slice(0, MAX_SHOW).forEach(item => {
+        const pip = document.createElement('div');
+        let bgColor, label;
+        if (item.type === 'bill') {
+          bgColor = item.is_paid ? 'rgba(16,185,129,0.8)' : (item.is_overdue ? 'var(--accent-red)' : 'var(--accent-yellow)');
+          label = `$${item.amount.toFixed(0)} ${item.title}`;
+        } else {
+          bgColor = COLOR_MAP[item.color] || COLOR_MAP.blue;
+          label = item.title;
+        }
+        pip.style.cssText = `
+          background: ${bgColor};
+          border-radius: 3px;
+          padding: 1px 5px;
+          font-size: 0.68rem;
+          color: #fff;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-bottom: 2px;
+          line-height: 1.5;
+        `;
+        pip.textContent = label;
+        cell.appendChild(pip);
+      });
+
+      if (dayItems.length > MAX_SHOW) {
+        const more = document.createElement('div');
+        more.style.cssText = 'font-size:0.68rem;color:var(--text-subtle);padding:1px 4px;';
+        more.textContent = `+${dayItems.length - MAX_SHOW} more`;
+        cell.appendChild(more);
+      }
+
+      // Hover effect
+      cell.addEventListener('mouseenter', () => {
+        if (isoDate !== (activeDay && activeDay.iso)) {
+          cell.style.borderColor = 'rgba(59,130,246,0.3)';
+          cell.style.background = 'rgba(59,130,246,0.04)';
+        }
+      });
+      cell.addEventListener('mouseleave', () => {
+        if (isoDate !== (activeDay && activeDay.iso)) {
+          cell.style.borderColor = isToday ? 'rgba(59,130,246,0.5)' : 'transparent';
+          cell.style.background = isToday ? 'rgba(59,130,246,0.08)' : 'var(--bg-elevated)';
+        }
+      });
+
+      cell.addEventListener('click', () => showDetail(isoDate, dayItems, cell));
+      grid.appendChild(cell);
+    }
+
+    // If an active day is set, re-highlight it
+    if (activeDay) {
+      closeDetail();
+    }
+  }
+
+  function showDetail(isoDate, items, cell) {
+    // Deactivate previous
+    if (activeDay && activeDay.cell) {
+      activeDay.cell.style.borderColor = activeDay.isToday ? 'rgba(59,130,246,0.5)' : 'transparent';
+      activeDay.cell.style.background = activeDay.isToday ? 'rgba(59,130,246,0.08)' : 'var(--bg-elevated)';
+    }
+
+    activeDay = { iso: isoDate, cell, isToday: isoDate === TODAY_ISO };
+    cell.style.borderColor = 'var(--accent-blue)';
+    cell.style.background = 'rgba(59,130,246,0.12)';
+
+    const panel = document.getElementById('cal-detail');
+    const titleEl = document.getElementById('cal-detail-title');
+    const itemsEl = document.getElementById('cal-detail-items');
+    const addLink = document.getElementById('cal-add-event-link');
+
+    titleEl.textContent = formatDateFull(isoDate);
+    addLink.href = `/finance/events/add/?date=${isoDate}`;
+
+    if (items.length === 0) {
+      itemsEl.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;margin:0;">No bills or events on this day.</p>';
+    } else {
+      itemsEl.innerHTML = items.map(item => {
+        if (item.type === 'bill') {
+          const statusColor = item.is_paid ? 'var(--accent-green)' : (item.is_overdue ? 'var(--accent-red)' : 'var(--accent-yellow)');
+          const statusLabel = item.is_paid ? 'Paid' : (item.is_overdue ? 'Overdue' : 'Due');
+          return `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;margin-bottom:0.4rem;background:var(--bg-surface);border-radius:6px;border-left:3px solid ${statusColor};">
+              <div>
+                <div style="font-size:0.875rem;font-weight:600;">💳 ${item.title}</div>
+                <div style="font-size:0.78rem;color:var(--text-muted);">Bill Due — $${item.amount.toFixed(2)}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.75rem;color:${statusColor};font-weight:600;">${statusLabel}</span>
+                <a href="${item.edit_url}" style="font-size:0.75rem;color:var(--text-muted);text-decoration:none;">Edit</a>
+              </div>
+            </div>`;
+        } else {
+          const col = COLOR_MAP[item.color] || COLOR_MAP.blue;
+          const FREQ_LABELS = {weekly:'Weekly',biweekly:'Bi-Weekly',monthly:'Monthly',quarterly:'Quarterly',annually:'Annual'};
+          const recurBadge = item.is_recurring
+            ? `<span style="font-size:0.68rem;background:rgba(59,130,246,.15);color:#60A5FA;border:1px solid rgba(59,130,246,.3);border-radius:3px;padding:1px 5px;margin-left:5px;">🔁 ${FREQ_LABELS[item.frequency]||item.frequency}</span>`
+            : '';
+          const multiDay = item.end_date && item.end_date !== item.date && !item.is_recurring
+            ? `<div style="font-size:0.78rem;color:var(--text-muted);">Through ${formatDateFull(item.end_date)}</div>` : '';
+          return `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;margin-bottom:0.4rem;background:var(--bg-surface);border-radius:6px;border-left:3px solid ${col};">
+              <div>
+                <div style="font-size:0.875rem;font-weight:600;">🗓 ${item.title}${recurBadge}</div>
+                ${multiDay}
+                ${item.notes ? `<div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">${item.notes}</div>` : ''}
+              </div>
+              <div style="display:flex;gap:0.5rem;">
+                <a href="${item.edit_url}" style="font-size:0.75rem;color:var(--text-muted);text-decoration:none;">Edit</a>
+                <form method="post" action="${item.delete_url}" style="margin:0;" onsubmit="return confirm('Delete this event?');">
+                  <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                  <button type="submit" style="background:none;border:none;color:var(--accent-red);font-size:0.75rem;cursor:pointer;padding:0;">Delete</button>
+                </form>
+              </div>
+            </div>`;
+        }
+      }).join('');
+    }
+
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function closeDetail() {
+    if (activeDay && activeDay.cell) {
+      activeDay.cell.style.borderColor = activeDay.isToday ? 'rgba(59,130,246,0.5)' : 'transparent';
+      activeDay.cell.style.background = activeDay.isToday ? 'rgba(59,130,246,0.08)' : 'var(--bg-elevated)';
+    }
+    activeDay = null;
+    document.getElementById('cal-detail').style.display = 'none';
+  }
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    if (currentMonth === 1) { currentMonth = 12; currentYear--; }
+    else { currentMonth--; }
+    closeDetail();
+    renderCalendar();
+  });
+
+  document.getElementById('cal-next').addEventListener('click', () => {
+    if (currentMonth === 12) { currentMonth = 1; currentYear++; }
+    else { currentMonth++; }
+    closeDetail();
+    renderCalendar();
+  });
+
+  document.getElementById('cal-today').addEventListener('click', () => {
+    currentYear = today.getFullYear();
+    currentMonth = today.getMonth() + 1;
+    closeDetail();
+    renderCalendar();
+  });
+
+  document.getElementById('cal-detail-close').addEventListener('click', closeDetail);
+
+  // Initial render
+  renderCalendar();
+})();
+</script>
+{% endblock %}

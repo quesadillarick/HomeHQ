@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeHQ — Login</title>
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/homehq.css' %}">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
+  <div style="width:100%;max-width:380px;padding:2rem;">
+    <div class="card-hq">
+      <div style="text-align:center;margin-bottom:2rem;">
+        <div style="font-size:2.5rem;margin-bottom:0.5rem;">⬡</div>
+        <h1 style="font-size:1.6rem;font-weight:700;color:var(--accent-blue);margin:0;">HomeHQ</h1>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.25rem;">Secure Household Management</p>
+      </div>
+      {% if form.errors %}
+        <div class="alert-hq alert-hq-error mb-3">Invalid username or password.</div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group-hq">
+          <label class="form-label-hq">Username</label>
+          <input type="text" name="username" class="form-control-hq" autofocus required>
+        </div>
+        <div class="form-group-hq">
+          <label class="form-label-hq">Password</label>
+          <input type="password" name="password" class="form-control-hq" required>
+        </div>
+        <button type="submit" class="btn-hq-primary" style="width:100%;padding:0.6rem;margin-top:0.5rem;">Sign In</button>
+      </form>
+    </div>
+    <p style="text-align:center;color:var(--text-subtle);font-size:0.75rem;margin-top:1rem;">Air-Gapped · Offline-First · Your Data Stays Home</p>
+  </div>
+</body>
+</html>

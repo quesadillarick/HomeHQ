@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}{{ note.title }} — HomeHQ{% endblock %}
+
+{% block content %}
+<div class="page-header mt-3">
+  <div>
+    <h1 class="page-title">{{ note.title }}</h1>
+    <p class="page-subtitle">
+      {% if note.category %}<span class="badge-hq-blue" style="margin-right:0.5rem;">{{ note.category }}</span>{% endif %}
+      Updated {{ note.updated_at|date:"F j, Y" }}
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'note_list' %}" class="btn-hq-secondary text-decoration-none">← Notes</a>
+    <a href="{% url 'note_edit' note.pk %}" class="btn-hq-primary text-decoration-none">Edit</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Rendered markdown body -->
+  <div class="col-md-9">
+    <div class="card-hq">
+      <div class="markdown-body">
+        {{ body_html }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar metadata -->
+  <div class="col-md-3">
+    <div class="card-hq">
+      <div class="card-hq-header"><h2 class="card-hq-title">Details</h2></div>
+      <div style="font-size:0.82rem;">
+        {% if note.category %}
+        <div style="padding:0.35rem 0; border-bottom:1px solid var(--border);">
+          <div class="text-muted-hq" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;">Category</div>
+          <span class="badge-hq-blue mt-1">{{ note.category }}</span>
+        </div>
+        {% endif %}
+        {% if note.tags %}
+        <div style="padding:0.35rem 0; border-bottom:1px solid var(--border);">
+          <div class="text-muted-hq" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;">Tags</div>
+          <div style="color:var(--accent-blue); margin-top:0.2rem; word-break:break-word;">{{ note.tags }}</div>
+        </div>
+        {% endif %}
+        <div style="padding:0.35rem 0; border-bottom:1px solid var(--border);">
+          <div class="text-muted-hq" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;">Created</div>
+          <div style="margin-top:0.2rem;">{{ note.created_at|date:"M j, Y" }}</div>
+        </div>
+        <div style="padding:0.35rem 0;">
+          <div class="text-muted-hq" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;">Last Updated</div>
+          <div style="margin-top:0.2rem;">{{ note.updated_at|date:"M j, Y g:i a" }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete -->
+    <div class="card-hq mt-2" style="border-color:rgba(239,68,68,0.2);">
+      <form method="post" action="{% url 'note_delete' note.pk %}" onsubmit="return confirm('Delete this note permanently?');">
+        {% csrf_token %}
+        <button type="submit" class="btn-hq-danger" style="width:100%; padding:0.45rem;">Delete Note</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
