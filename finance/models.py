@@ -38,6 +38,7 @@ class Bill(models.Model):
     due_date  = models.DateField()
     url       = models.URLField(max_length=500, blank=True, help_text="Optional link to the bill's payment page")
     notes     = models.TextField(blank=True)
+    is_variable = models.BooleanField(default=False, help_text="Amount changes each month (e.g. credit card, utilities)")
     is_active = models.BooleanField(default=True, help_text="Uncheck to stop tracking in future months")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -82,12 +83,19 @@ class BillPayment(models.Model):
     bill      = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='payments')
     month     = models.IntegerField()
     year      = models.IntegerField()
-    paid_date = models.DateField(null=True, blank=True)
+    paid_date  = models.DateField(null=True, blank=True)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
+                                      help_text="Actual amount paid; uses bill amount if blank")
     notes     = models.TextField(blank=True)
 
     class Meta:
         unique_together = ['bill', 'month', 'year']
         ordering = ['-year', '-month']
+
+    @property
+    def resolved_amount(self):
+        """Return the amount actually paid, falling back to the bill's default amount."""
+        return self.amount_paid if self.amount_paid is not None else self.bill.amount
 
     def __str__(self):
         return f"{self.bill.name} — {self.month}/{self.year} (Paid)"

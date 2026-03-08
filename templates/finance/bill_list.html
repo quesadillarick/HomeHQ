@@ -5,54 +5,53 @@
 <div class="page-header mt-2">
   <div>
     <h1 class="page-title">Bill Tracker</h1>
-    <p class="page-subtitle">Recurring bill status by month</p>
+    <p class="page-subtitle">Monthly bill status and payment tracking</p>
   </div>
   <div class="d-flex gap-2 flex-wrap">
-    <a href="{% url 'bill_export' %}" class="btn-hq-secondary text-decoration-none">⬇ Export JSON</a>
-    <a href="{% url 'bill_import' %}" class="btn-hq-secondary text-decoration-none">⬆ Import JSON</a>
+    <a href="{% url 'bill_report' %}" class="btn-hq-secondary text-decoration-none">📊 Report</a>
+    <a href="{% url 'bill_export' %}" class="btn-hq-secondary text-decoration-none">⬇ Export</a>
+    <a href="{% url 'bill_import' %}" class="btn-hq-secondary text-decoration-none">⬆ Import</a>
     <a href="{% url 'budget_list' %}" class="btn-hq-secondary text-decoration-none">Budgets</a>
     <a href="{% url 'bill_create' %}" class="btn-hq-primary text-decoration-none">+ Add Bill</a>
   </div>
 </div>
 
-<!-- Month nav + summary -->
-<div class="card-hq mb-3" style="padding:0.85rem 1.25rem;">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
-    <div style="display:flex;align-items:center;gap:0.65rem;">
-      <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn-hq-secondary text-decoration-none" style="padding:0.3rem 0.8rem;font-size:1.1rem;line-height:1;">&#8249;</a>
+<!-- Month nav + summary bar -->
+<div class="card-hq mb-3" style="padding:.85rem 1.25rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+    <div style="display:flex;align-items:center;gap:.65rem;">
+      <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn-hq-secondary text-decoration-none" style="padding:.3rem .8rem;font-size:1.1rem;line-height:1;">&#8249;</a>
       <h2 style="font-size:1.1rem;font-weight:700;margin:0;min-width:155px;text-align:center;">{{ month_name }}</h2>
-      <a href="?month={{ next_month }}&year={{ next_year }}" class="btn-hq-secondary text-decoration-none" style="padding:0.3rem 0.8rem;font-size:1.1rem;line-height:1;">&#8250;</a>
-      {% if not is_current_month %}
-        <a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.75rem;padding:0.3rem 0.7rem;">Today</a>
-      {% endif %}
+      <a href="?month={{ next_month }}&year={{ next_year }}" class="btn-hq-secondary text-decoration-none" style="padding:.3rem .8rem;font-size:1.1rem;line-height:1;">&#8250;</a>
+      {% if not is_current_month %}<a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none" style="font-size:.75rem;padding:.3rem .7rem;">Today</a>{% endif %}
     </div>
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
-        <span class="text-muted-hq">Total</span> <strong>${{ total_due|floatformat:2 }}</strong>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;padding:.28rem .7rem;font-size:.78rem;">
+        <span class="text-muted-hq">Expected</span> <strong>${{ total_expected|floatformat:2 }}</strong>
       </div>
-      <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
+      <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:6px;padding:.28rem .7rem;font-size:.78rem;">
         <span style="color:var(--accent-green);">✓ Paid ${{ total_paid|floatformat:2 }}</span>
       </div>
       {% if total_unpaid > 0 %}
-      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
+      <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:.28rem .7rem;font-size:.78rem;">
         <span style="color:var(--accent-yellow);">⏳ Unpaid ${{ total_unpaid|floatformat:2 }}</span>
       </div>
       {% endif %}
       {% if overdue_count > 0 %}
-      <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:0.28rem 0.7rem;font-size:0.78rem;">
+      <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:.28rem .7rem;font-size:.78rem;">
         <span style="color:var(--accent-red);">⚠ {{ overdue_count }} overdue</span>
       </div>
       {% endif %}
     </div>
   </div>
   {% if bill_count > 0 %}
-  <div style="margin-top:0.85rem;">
-    <div style="display:flex;justify-content:space-between;font-size:0.73rem;color:var(--text-muted);margin-bottom:0.3rem;">
+  <div style="margin-top:.85rem;">
+    <div style="display:flex;justify-content:space-between;font-size:.73rem;color:var(--text-muted);margin-bottom:.3rem;">
       <span>{{ paid_count }} of {{ bill_count }} paid</span>
-      <span>${{ total_paid|floatformat:0 }} / ${{ total_due|floatformat:0 }}</span>
+      <span>${{ total_paid|floatformat:0 }} / ${{ total_expected|floatformat:0 }}</span>
     </div>
     <div class="progress-hq" style="height:5px;">
-      {% if total_due > 0 %}{% widthratio total_paid total_due 100 as pv %}<div class="progress-bar-hq" style="width:{{ pv }}%;"></div>{% endif %}
+      {% if total_expected > 0 %}{% widthratio total_paid total_expected 100 as pv %}<div class="progress-bar-hq" style="width:{{ pv }}%;"></div>{% endif %}
     </div>
   </div>
   {% endif %}
@@ -64,9 +63,10 @@
     <thead>
       <tr>
         <th>Bill</th>
-        <th>Amount</th>
+        <th>Expected</th>
         <th>Frequency</th>
         <th>Due Date</th>
+        <th>Paid Amount</th>
         <th>Status</th>
         <th>Actions</th>
       </tr>
@@ -74,26 +74,41 @@
     <tbody>
       {% for row in bill_rows %}
       <tr {% if row.is_overdue %}class="overdue-row"{% endif %}>
+        <!-- Name + optional link + variable badge -->
         <td>
           {% if row.bill.url %}
             <a href="{{ row.bill.url }}" target="_blank" rel="noopener noreferrer"
                style="font-weight:600;color:var(--accent-blue);text-decoration:none;">
-              {{ row.bill.name }}
-              <span style="font-size:0.7rem;opacity:0.7;margin-left:3px;">↗</span>
+              {{ row.bill.name }}<span style="font-size:.7rem;opacity:.65;margin-left:3px;">↗</span>
             </a>
           {% else %}
             <span style="font-weight:600;">{{ row.bill.name }}</span>
           {% endif %}
-          {% if row.bill.notes %}
-            <div style="font-size:0.73rem;color:var(--text-muted);margin-top:0.1rem;">{{ row.bill.notes|truncatechars:55 }}</div>
-          {% endif %}
+          {% if row.bill.is_variable %}<span class="badge-hq-purple" style="margin-left:4px;font-size:.65rem;">Variable</span>{% endif %}
+          {% if row.bill.notes %}<div style="font-size:.72rem;color:var(--text-muted);margin-top:.1rem;">{{ row.bill.notes|truncatechars:55 }}</div>{% endif %}
         </td>
-        <td style="font-weight:700;">${{ row.bill.amount }}</td>
+        <!-- Expected amount (bill default) -->
+        <td style="color:var(--text-muted);">${{ row.bill.amount }}</td>
         <td><span class="badge-hq-gray">{{ row.bill.get_frequency_display }}</span></td>
         <td style="white-space:nowrap;">
           {{ row.due|date:"M j, Y" }}
-          {% if row.is_overdue %}<br><span class="badge-hq-red" style="font-size:0.68rem;">Overdue</span>{% endif %}
-          {% if row.is_paid and row.paid_date %}<br><span style="font-size:0.7rem;color:var(--text-muted);">Paid {{ row.paid_date|date:"M j" }}</span>{% endif %}
+          {% if row.is_overdue %}<br><span class="badge-hq-red" style="font-size:.68rem;">Overdue</span>{% endif %}
+        </td>
+        <!-- Actual paid amount -->
+        <td style="font-weight:700;">
+          {% if row.is_paid %}
+            <span style="color:var(--accent-green);">${{ row.paid_amount }}</span>
+            {% if row.bill.is_variable and row.paid_amount != row.bill.amount %}
+              {% if row.paid_amount < row.bill.amount %}
+                <span style="font-size:.7rem;color:var(--accent-yellow);margin-left:3px;">↓ under</span>
+              {% else %}
+                <span style="font-size:.7rem;color:var(--accent-red);margin-left:3px;">↑ over</span>
+              {% endif %}
+            {% endif %}
+            {% if row.paid_date %}<div style="font-size:.7rem;color:var(--text-muted);">{{ row.paid_date|date:"M j" }}</div>{% endif %}
+          {% else %}
+            <span class="text-muted-hq">—</span>
+          {% endif %}
         </td>
         <td>
           {% if row.is_paid %}<span class="badge-hq-green">✓ Paid</span>
@@ -103,31 +118,149 @@
         <td>
           <div class="d-flex gap-1 flex-wrap">
             {% if row.is_paid %}
+              <!-- Unpay -->
               <form method="post" action="{% url 'bill_mark_unpaid' row.bill.pk %}" style="margin:0;">
                 {% csrf_token %}
                 <input type="hidden" name="month" value="{{ month }}">
                 <input type="hidden" name="year" value="{{ year }}">
-                <button type="submit" class="btn-hq-secondary" style="padding:0.28rem 0.55rem;font-size:0.73rem;">↩ Unpay</button>
+                <button type="submit" class="btn-hq-secondary" style="padding:.28rem .55rem;font-size:.73rem;">↩ Unpay</button>
               </form>
+            {% elif row.bill.is_variable %}
+              <!-- Variable: open modal -->
+              <button type="button"
+                class="btn-hq-success open-variable-modal"
+                style="padding:.28rem .55rem;font-size:.73rem;"
+                data-bill-id="{{ row.bill.pk }}"
+                data-bill-name="{{ row.bill.name }}"
+                data-bill-amount="{{ row.bill.amount }}"
+                data-month="{{ month }}"
+                data-year="{{ year }}">
+                ✓ Pay
+              </button>
             {% else %}
+              <!-- Fixed: direct submit -->
               <form method="post" action="{% url 'bill_mark_paid' row.bill.pk %}" style="margin:0;">
                 {% csrf_token %}
                 <input type="hidden" name="month" value="{{ month }}">
                 <input type="hidden" name="year" value="{{ year }}">
-                <button type="submit" class="btn-hq-success" style="padding:0.28rem 0.55rem;font-size:0.73rem;">✓ Pay</button>
+                <button type="submit" class="btn-hq-success" style="padding:.28rem .55rem;font-size:.73rem;">✓ Pay</button>
               </form>
             {% endif %}
-            <a href="{% url 'bill_edit' row.bill.pk %}" class="btn-hq-secondary text-decoration-none" style="padding:0.28rem 0.55rem;font-size:0.73rem;">Edit</a>
-            <a href="{% url 'bill_delete' row.bill.pk %}" class="btn-hq-danger text-decoration-none" style="padding:0.28rem 0.55rem;font-size:0.73rem;">Del</a>
+            <a href="{% url 'bill_edit' row.bill.pk %}" class="btn-hq-secondary text-decoration-none" style="padding:.28rem .55rem;font-size:.73rem;">Edit</a>
+            <a href="{% url 'bill_delete' row.bill.pk %}" class="btn-hq-danger text-decoration-none" style="padding:.28rem .55rem;font-size:.73rem;">Del</a>
           </div>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
-        No bills in {{ month_name }}. <a href="{% url 'bill_create' %}" style="color:var(--accent-blue);">Add one</a> or navigate to another month.
+      <tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--text-muted);">
+        No bills in {{ month_name }}.
+        <a href="{% url 'bill_create' %}" style="color:var(--accent-blue);">Add one</a> or navigate to another month.
       </td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+<!-- ── Variable Payment Modal ───────────────────────────────────────────── -->
+<div id="variable-modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:420px;padding:1.75rem;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <div>
+        <h3 id="modal-title" style="font-size:1rem;font-weight:700;margin:0;"></h3>
+        <p id="modal-subtitle" style="font-size:.78rem;color:var(--text-muted);margin:.2rem 0 0;"></p>
+      </div>
+      <button id="modal-close" style="background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;padding:.2rem .4rem;border-radius:4px;line-height:1;">✕</button>
+    </div>
+
+    <form id="variable-pay-form" method="post" action="">
+      {% csrf_token %}
+      <input type="hidden" name="month" id="modal-month">
+      <input type="hidden" name="year"  id="modal-year">
+
+      <div class="form-group-hq">
+        <label class="form-label-hq">Amount Paid <span style="color:var(--accent-red);">*</span></label>
+        <div style="position:relative;">
+          <span style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--text-muted);font-weight:600;">$</span>
+          <input type="number" name="amount_paid" id="modal-amount"
+                 step="0.01" min="0" required
+                 class="form-control-hq"
+                 style="padding-left:1.75rem;"
+                 placeholder="0.00">
+        </div>
+        <div id="modal-hint" style="font-size:.72rem;color:var(--text-subtle);margin-top:.25rem;"></div>
+      </div>
+
+      <div class="form-group-hq">
+        <label class="form-label-hq">Payment Date</label>
+        <input type="date" name="paid_date" id="modal-date" class="form-control-hq">
+      </div>
+
+      <div class="form-group-hq">
+        <label class="form-label-hq">Notes <span style="color:var(--text-subtle);">(optional)</span></label>
+        <input type="text" name="notes" class="form-control-hq"
+               placeholder="e.g. minimum payment, paid in full…">
+      </div>
+
+      <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
+        <button type="submit" class="btn-hq-success" style="flex:1;padding:.55rem;">Record Payment</button>
+        <button type="button" id="modal-cancel" class="btn-hq-secondary" style="flex:1;padding:.55rem;">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  const backdrop = document.getElementById('variable-modal-backdrop');
+  const form     = document.getElementById('variable-pay-form');
+  const title    = document.getElementById('modal-title');
+  const subtitle = document.getElementById('modal-subtitle');
+  const hint     = document.getElementById('modal-hint');
+  const amtInput = document.getElementById('modal-amount');
+  const dateInput= document.getElementById('modal-date');
+  const monthIn  = document.getElementById('modal-month');
+  const yearIn   = document.getElementById('modal-year');
+
+  // Set today as default payment date
+  const todayIso = new Date().toISOString().split('T')[0];
+  if (dateInput) dateInput.value = todayIso;
+
+  function openModal(btn) {
+    const billId   = btn.dataset.billId;
+    const billName = btn.dataset.billName;
+    const billAmt  = parseFloat(btn.dataset.billAmount);
+    const month    = btn.dataset.month;
+    const year     = btn.dataset.year;
+
+    title.textContent    = `Record Payment — ${billName}`;
+    subtitle.textContent = `Variable bill · Default amount $${billAmt.toFixed(2)}`;
+    hint.textContent     = `Default: $${billAmt.toFixed(2)} — enter the actual amount paid this month.`;
+    amtInput.value       = billAmt.toFixed(2);
+    amtInput.placeholder = billAmt.toFixed(2);
+    monthIn.value        = month;
+    yearIn.value         = year;
+    form.action          = `/finance/bills/${billId}/mark-paid/`;
+
+    backdrop.style.display = 'flex';
+    setTimeout(() => amtInput.select(), 50);
+  }
+
+  function closeModal() {
+    backdrop.style.display = 'none';
+    form.reset();
+    if (dateInput) dateInput.value = todayIso;
+  }
+
+  document.querySelectorAll('.open-variable-modal').forEach(btn => {
+    btn.addEventListener('click', () => openModal(btn));
+  });
+
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+})();
+</script>
 {% endblock %}

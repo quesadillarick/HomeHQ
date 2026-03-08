@@ -20,15 +20,16 @@ class DarkFormMixin:
 class BillForm(DarkFormMixin, forms.ModelForm):
     class Meta:
         model = Bill
-        fields = ['name', 'amount', 'frequency', 'due_date', 'url', 'is_active', 'notes']
+        fields = ['name', 'amount', 'frequency', 'due_date', 'url', 'is_variable', 'is_active', 'notes']
         widgets = {
             'due_date': forms.DateInput(attrs={'type': 'date'}),
             'notes':    forms.Textarea(attrs={'rows': 3}),
         }
         help_texts = {
-            'due_date': 'Sets the day-of-month for recurring bills and the start month.',
-            'url':      'Link to the payment portal or biller website.',
-            'is_active':'Uncheck to stop appearing in future months.',
+            'due_date':    'Sets the day-of-month for recurring bills and the start month.',
+            'url':         'Link to the payment portal or biller website.',
+            'is_variable': 'Amount varies each month (credit card, utilities, etc.).',
+            'is_active':   'Uncheck to stop appearing in future months.',
         }
 
 
@@ -63,3 +64,27 @@ class CalendarEventForm(DarkFormMixin, forms.ModelForm):
             'end_date':     'For single multi-day events (ignored when repeating).',
             'repeat_until': 'Stop generating occurrences after this date. Leave blank for indefinite.',
         }
+
+
+class VariablePaymentForm(forms.Form):
+    amount_paid = forms.DecimalField(
+        max_digits=10, decimal_places=2,
+        label='Amount Paid',
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control-hq',
+            'step': '0.01',
+            'min': '0',
+            'placeholder': '0.00',
+            'autofocus': 'autofocus',
+        })
+    )
+    paid_date = forms.DateField(
+        required=False,
+        label='Payment Date',
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control-hq'})
+    )
+    notes = forms.CharField(
+        required=False,
+        label='Notes (optional)',
+        widget=forms.TextInput(attrs={'class': 'form-control-hq', 'placeholder': 'e.g. minimum payment, full balance...'})
+    )

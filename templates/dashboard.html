@@ -87,21 +87,21 @@
         <h2 class="card-hq-title">📅 Bills Due Soon</h2>
         <a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none" style="font-size:0.8rem;padding:0.3rem 0.75rem;">All Bills</a>
       </div>
-      {% if upcoming_bills %}
-        {% for bill in upcoming_bills %}
+      {% if upcoming_rows %}
+        {% for row in upcoming_rows %}
         <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
           <div>
-            <div style="font-weight:500;font-size:0.875rem;">{{ bill.name }}</div>
-            <div style="font-size:0.78rem;color:var(--text-muted);">{{ bill.due_date|date:"M j" }} · {{ bill.get_frequency_display }}</div>
+            <div style="font-weight:500;font-size:0.875rem;">{{ row.bill.name }}</div>
+            <div style="font-size:0.78rem;color:var(--text-muted);">{{ row.due|date:"M j" }} · {{ row.bill.get_frequency_display }}</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-weight:600;font-size:0.875rem;">${{ bill.amount }}</div>
-            {% if bill.is_overdue %}<span class="badge-hq-red">Overdue</span>{% else %}<span class="badge-hq-yellow">Due Soon</span>{% endif %}
+            <div style="font-weight:600;font-size:0.875rem;">${{ row.bill.amount }}</div>
+            <span class="badge-hq-yellow">Due Soon</span>
           </div>
         </div>
         {% endfor %}
       {% else %}
-        <p class="text-muted-hq" style="font-size:0.875rem;text-align:center;padding:1rem 0;margin:0;">No bills due in the next 14 days.</p>
+        <p class="text-muted-hq" style="font-size:0.875rem;text-align:center;padding:1rem 0;margin:0;">No unpaid bills due in the next 14 days.</p>
       {% endif %}
     </div>
   </div>
@@ -252,7 +252,7 @@
       const endDate = item.end_date ? isoToLocal(item.end_date) : startDate;
       let cursor = new Date(startDate);
       while (cursor <= endDate) {
-        const iso = cursor.toISOString().split('T')[0];
+        const iso = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}-${String(cursor.getDate()).padStart(2,'0')}`;
         if (!map[iso]) map[iso] = [];
         map[iso].push(item);
         cursor.setDate(cursor.getDate() + 1);

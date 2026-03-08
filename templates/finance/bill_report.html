@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% block title %}Bills Report — HomeHQ{% endblock %}
+
+{% block content %}
+<div class="page-header mt-2 no-print">
+  <div>
+    <h1 class="page-title">Bills Report</h1>
+    <p class="page-subtitle">Payment history and spending analysis</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'bill_list' %}" class="btn-hq-secondary text-decoration-none no-print">← Bills</a>
+    <button onclick="window.print()" class="btn-hq-primary no-print">🖨 Print / Save PDF</button>
+  </div>
+</div>
+
+<!-- ── Range selector ─────────────────────────────────────────────────── -->
+<div class="card-hq mb-3 no-print">
+  <div class="card-hq-header"><h2 class="card-hq-title">Date Range</h2></div>
+
+  <!-- Preset buttons -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    {% for p, label in presets %}
+    <a href="?preset={{ p }}"
+       class="{% if preset == p %}btn-hq-primary{% else %}btn-hq-secondary{% endif %} text-decoration-none"
+       style="font-size:.8rem;padding:.35rem .85rem;">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  <!-- Custom range form -->
+  <form method="get" action="{% url 'bill_report' %}" style="display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap;">
+    <div>
+      <label class="form-label-hq">From</label>
+      <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control-hq" style="width:170px;">
+    </div>
+    <div>
+      <label class="form-label-hq">To</label>
+      <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control-hq" style="width:170px;">
+    </div>
+    <button type="submit" class="btn-hq-primary" style="padding:.45rem 1.1rem;">Apply</button>
+  </form>
+</div>
+
+<!-- ── Print header (only visible when printing) ───────────────────────── -->
+<div class="print-only" style="display:none;margin-bottom:1.5rem;">
+  <h1 style="font-size:1.6rem;font-weight:700;margin:0;">HomeHQ — Bills Report</h1>
+  <p style="color:#555;margin:.25rem 0 0;">
+    {{ date_from|date:"F j, Y" }} — {{ date_to|date:"F j, Y" }}
+    &nbsp;·&nbsp; Generated {{ today|date:"F j, Y" }}
+  </p>
+</div>
+
+<!-- ── Grand summary cards ─────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.4rem;">${{ grand_expected|floatformat:2 }}</div>
+      <div class="stat-label">Total Expected</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.4rem;color:var(--accent-green);">${{ grand_paid|floatformat:2 }}</div>
+      <div class="stat-label">Total Paid</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.4rem;color:var(--accent-yellow);">${{ grand_unpaid|floatformat:2 }}</div>
+      <div class="stat-label">Total Unpaid</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.4rem;">{{ month_count }}</div>
+      <div class="stat-label">Month{{ month_count|pluralize }} Covered</div>
+    </div>
+  </div>
+</div>
+
+{% if grand_variable_paid > 0 or grand_fixed_paid > 0 %}
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="stat-card" style="text-align:left;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">Fixed Bills Paid</div>
+      <div style="font-size:1.3rem;font-weight:700;color:var(--accent-blue);">${{ grand_fixed_paid|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="stat-card" style="text-align:left;">
+      <div style="font-size:.72rem;font-weight:700;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">Variable Bills Paid</div>
+      <div style="font-size:1.3rem;font-weight:700;color:var(--accent-purple);">${{ grand_variable_paid|floatformat:2 }}</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Monthly breakdown ───────────────────────────────────────────────── -->
+{% for rm in report_months %}
+<div class="card-hq mb-3 report-month-block">
+  <!-- Month header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);">
+    <h2 style="font-size:1rem;font-weight:700;margin:0;">{{ rm.label }}</h2>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:.78rem;color:var(--text-muted);">{{ rm.paid_count }}/{{ rm.bill_count }} paid</span>
+      <span class="badge-hq-green" style="font-size:.72rem;">${{ rm.paid|floatformat:2 }} paid</span>
+      {% if rm.unpaid > 0 %}<span class="badge-hq-yellow" style="font-size:.72rem;">${{ rm.unpaid|floatformat:2 }} unpaid</span>{% endif %}
+      {% if rm.variable_paid > 0 %}<span class="badge-hq-purple" style="font-size:.72rem;">${{ rm.variable_paid|floatformat:2 }} variable</span>{% endif %}
+    </div>
+  </div>
+
+  <!-- Bills for this month -->
+  <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+    <thead>
+      <tr style="color:var(--text-muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;">
+        <th style="padding:.4rem .6rem;text-align:left;border-bottom:1px solid var(--border);">Bill</th>
+        <th style="padding:.4rem .6rem;text-align:left;border-bottom:1px solid var(--border);">Type</th>
+        <th style="padding:.4rem .6rem;text-align:right;border-bottom:1px solid var(--border);">Expected</th>
+        <th style="padding:.4rem .6rem;text-align:right;border-bottom:1px solid var(--border);">Paid</th>
+        <th style="padding:.4rem .6rem;text-align:center;border-bottom:1px solid var(--border);">Date Paid</th>
+        <th style="padding:.4rem .6rem;text-align:center;border-bottom:1px solid var(--border);">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rm.rows %}
+      <tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+        <td style="padding:.45rem .6rem;font-weight:500;">
+          {{ row.bill.name }}
+          {% if row.bill.is_variable %}<span class="badge-hq-purple" style="font-size:.62rem;margin-left:4px;">Var</span>{% endif %}
+        </td>
+        <td style="padding:.45rem .6rem;color:var(--text-muted);">{{ row.bill.get_frequency_display }}</td>
+        <td style="padding:.45rem .6rem;text-align:right;color:var(--text-muted);">${{ row.bill.amount }}</td>
+        <td style="padding:.45rem .6rem;text-align:right;font-weight:600;">
+          {% if row.is_paid %}
+            <span style="color:var(--accent-green);">${{ row.paid_amount }}</span>
+          {% else %}
+            <span style="color:var(--text-subtle);">—</span>
+          {% endif %}
+        </td>
+        <td style="padding:.45rem .6rem;text-align:center;color:var(--text-muted);">
+          {% if row.paid_date %}{{ row.paid_date|date:"M j" }}{% else %}—{% endif %}
+        </td>
+        <td style="padding:.45rem .6rem;text-align:center;">
+          {% if row.is_paid %}<span class="badge-hq-green" style="font-size:.65rem;">Paid</span>
+          {% elif row.is_overdue %}<span class="badge-hq-red" style="font-size:.65rem;">Overdue</span>
+          {% else %}<span class="badge-hq-yellow" style="font-size:.65rem;">Unpaid</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr style="border-top:2px solid var(--border);">
+        <td colspan="2" style="padding:.5rem .6rem;font-weight:700;font-size:.78rem;color:var(--text-muted);">Month Total</td>
+        <td style="padding:.5rem .6rem;text-align:right;font-weight:700;">${{ rm.expected|floatformat:2 }}</td>
+        <td style="padding:.5rem .6rem;text-align:right;font-weight:700;color:var(--accent-green);">${{ rm.paid|floatformat:2 }}</td>
+        <td colspan="2"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Mini progress bar -->
+  {% if rm.expected > 0 %}
+  <div style="margin-top:.65rem;">
+    <div class="progress-hq" style="height:4px;">
+      {% widthratio rm.paid rm.expected 100 as pv %}
+      <div class="progress-bar-hq" style="width:{{ pv }}%;"></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% empty %}
+<div class="card-hq" style="text-align:center;padding:3rem;color:var(--text-muted);">
+  No bill data found for this date range.
+</div>
+{% endfor %}
+
+<!-- ── Grand total footer ──────────────────────────────────────────────── -->
+{% if report_months %}
+<div class="card-hq" style="border-color:rgba(59,130,246,.3);">
+  <h2 style="font-size:.85rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 .85rem;">
+    Grand Total — {{ date_from|date:"M j, Y" }} to {{ date_to|date:"M j, Y" }}
+  </h2>
+  <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+    <div><div style="font-size:.72rem;color:var(--text-subtle);">Expected</div><div style="font-size:1.3rem;font-weight:700;">${{ grand_expected|floatformat:2 }}</div></div>
+    <div><div style="font-size:.72rem;color:var(--text-subtle);">Paid</div><div style="font-size:1.3rem;font-weight:700;color:var(--accent-green);">${{ grand_paid|floatformat:2 }}</div></div>
+    <div><div style="font-size:.72rem;color:var(--text-subtle);">Unpaid</div><div style="font-size:1.3rem;font-weight:700;color:var(--accent-yellow);">${{ grand_unpaid|floatformat:2 }}</div></div>
+    {% if grand_fixed_paid %}<div><div style="font-size:.72rem;color:var(--text-subtle);">Fixed Paid</div><div style="font-size:1.3rem;font-weight:700;color:var(--accent-blue);">${{ grand_fixed_paid|floatformat:2 }}</div></div>{% endif %}
+    {% if grand_variable_paid %}<div><div style="font-size:.72rem;color:var(--text-subtle);">Variable Paid</div><div style="font-size:1.3rem;font-weight:700;color:var(--accent-purple);">${{ grand_variable_paid|floatformat:2 }}</div></div>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Pass preset list to template via context instead of hardcoding — done server-side
+</script>
+{% endblock %}
